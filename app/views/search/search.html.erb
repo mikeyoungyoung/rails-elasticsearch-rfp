@@ -1,0 +1,46 @@
+<h1>RFP Search</h1>
+<%= form_for search_path, method: :get do |f| %>
+  <p>
+    <%= f.label "Search for" %>
+    <%= text_field_tag :q, params[:q] %>
+    <%= submit_tag "Go", name: nil %>
+  </p>
+<% end %>
+
+<ul>
+  <% @articles.each do |article| %>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">
+        <%= link_to article.try(:highlight).try(:title) ? article.highlight.title[0].html_safe : article.title,
+          controller: "articles",
+          action: "show",
+          id: article._id%>
+        </h3>
+        <p>Relevance:</p>
+        <div class="progress">
+          <!-- Need to build a begin/raise here if I want to do this in the view... IF relevance! RAISE "web services not available" -->
+          <% relevance = Indico.relevance(article.text, [params[:q]]).first.round(2) || "nil returned" %>
+          <% keywords = Indico.keywords(article.text, {version: 2, independent: true}) %>
+          <% puts keywords.class %>
+          <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: <%= relevance*100 %>%;">
+            <%= "#{relevance*100}%" %>
+          </div>
+        </div>
+        
+          <% keywords.each do |k,v| %>
+            <font size="<%= v*100 %>"><%= k %></font>
+          <% end %>
+        
+      </div>
+      <div class="panel-body">
+        <% if article.try(:highlight).try(:text) %>
+          <% article.highlight.text.each do |snippet| %>
+            <p><%= snippet.html_safe %>...</p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</ul>
+<a href="/search">Search Again</a>
